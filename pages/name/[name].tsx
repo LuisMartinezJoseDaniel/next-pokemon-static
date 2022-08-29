@@ -125,7 +125,7 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
   );
   // Mapear a un arreglo de strings
   const pokemonsByName151: string[] = data.results.map(
-    (smallPokemon) => smallPokemon.name
+    (smallPokemon) => smallPokemon.name.toLowerCase()
   );
 
   return {
@@ -135,7 +135,7 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
         name,
       },
     })),
-    fallback: false,
+    fallback: "blocking", //blocking renderiza la page
   };
 };
 
@@ -147,11 +147,23 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { name } = params as { name: string }; //casteo
+  const pokemon = await getPokemonInfo( name );
+  
+  if ( !pokemon ) {
+    return {
+      redirect: {
+        destination: "/", 
+        permanent: false //puede que en el futuro exista ese pokemon
+      }
+    }
+  }
 
   return {
     props: {
-      pokemon: await getPokemonInfo(name),
+      pokemon,
     },
+    // Revalidar la pagina despues de un 1 dia, similar a udemy con los precios
+    revalidate: 86400
   };
 };
 

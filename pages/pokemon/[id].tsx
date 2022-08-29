@@ -130,12 +130,13 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
     // Numero de paginas que se van a generar estaticamente
     // las paths deben ser un array de objetos
 
-    paths: pokemons151.map((id) => ({
+    paths: pokemons151.map( ( id ) => ( {
       params: { id }, // deben nombrarse igual que la pg. dinamica y deben ser string
-    })),
+    } ) ),
 
     // fallback ->  blocking | boolean -> si es blocking se renderiza, si es false muestra 404
-    fallback: false,
+    // fallback: false,
+    fallback: 'blocking'
   };
 };
 
@@ -144,10 +145,26 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // casting con 'as'
   const { id } = params as { id: string };
 
+  const pokemon = await getPokemonInfo( id );
+
+  if ( !pokemon ) {
+    return {
+      redirect: {
+        destination: "/",
+        // si no existe el pokemon, puede que en el futuro si exista por la api, entonces
+        // true, para decirle a los bots de google que es pagina nunca va a existir, false, para decirle que esa pagina en el futuro puede existir
+        permanent: false,
+      },
+    };  
+  }
+
   return {
     props: {
-      pokemon: await getPokemonInfo(id),
+      pokemon
     },
+    // - Regenerar la pagina cada 86400s / 3600s = 24 hrs
+    // - 1hr = 3600s
+    revalidate: 86400
   };
 };
 
